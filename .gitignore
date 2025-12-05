@@ -7,28 +7,96 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv/
+env.bak/
+venv.bak/
 
-# IDE
+# IDE and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.cursor/
+*.sublime-project
+*.sublime-workspace
 
 # Model checkpoints and outputs
 checkpoints/
 outputs/
 submissions/
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.pb
+*.onnx
 
-# Jupyter Notebook checkpoints
+# Modal uploads and temporary files
+modal_upload/
+*.zip
+!data/raw/*.zip
+
+# Jupyter Notebook checkpoints and outputs
 .ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+*.pkl
+*.pickle
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Profiling
+.prof
 

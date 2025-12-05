@@ -114,6 +114,14 @@ def train():
         config.paths.state_mapping = DATA_ROOT / "state_mapping.csv"
         print("state_mapping ->", config.paths.state_mapping)
 
+    # ---- Override output paths to use the Modal volume for persistence ----
+    # Checkpoints saved to volume survive container crashes/restarts
+    config.paths.checkpoints_dir = Path("/data/checkpoints")
+    config.paths.submissions_dir = Path("/data/submissions")
+    
+    # Logs can stay local (not critical to persist)
+    config.paths.logs_dir = Path("outputs/training_logs")
+
     # Ensure output dirs exist
     for attr in ("logs_dir", "checkpoints_dir", "submissions_dir"):
         if hasattr(config.paths, attr):

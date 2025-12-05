@@ -313,7 +313,29 @@ class Trainer:
             
             epoch_time = time.time() - epoch_start
             
-            # Log results
+            # SAVE CHECKPOINT IMMEDIATELY after validation (before any prints that could fail)
+            # This ensures we don't lose progress if there's a bug in logging
+            is_best = val_metrics['final_score'] > self.best_score
+            if is_best:
+                self.best_score = val_metrics['final_score']
+                patience_counter = 0
+                
+                if save_dir is not None:
+                    self.save_checkpoint(
+                        save_dir / f"best_{phase}.pt",
+                        val_metrics
+                    )
+            else:
+                patience_counter += 1
+            
+            # Save periodic checkpoint
+            if save_dir is not None and epoch % self.config.training.save_every_n_epochs == 0:
+                self.save_checkpoint(
+                    save_dir / f"epoch_{self.current_epoch}_{phase}.pt",
+                    val_metrics
+                )
+            
+            # Now log results (safe to fail after checkpoints are saved)
             print(f"\nEpoch {self.current_epoch}/{num_epochs} ({epoch_time:.1f}s)")
             print(f"  Train Loss: {train_metrics['train_loss']:.4f} "
                   f"(cls: {train_metrics['train_cls_loss']:.4f}, "
@@ -324,32 +346,14 @@ class Trainer:
                   f"gps: {val_metrics['gps_score']:.4f})")
             print(f"  GPS Mean Distance: {val_metrics['gps_mean_distance_km']:.1f} km")
             
+            if is_best:
+                print(f"  New best score! Saved checkpoint.")
+            
             # Update history
             self.history['train_loss'].append(train_metrics['train_loss'])
             self.history['val_loss'].append(val_metrics['val_loss'])
             self.history['val_score'].append(val_metrics['final_score'])
             self.history['learning_rates'].append(train_metrics['learning_rate'])
-            
-            # Save checkpoint if best
-            if val_metrics['final_score'] > self.best_score:
-                self.best_score = val_metrics['final_score']
-                patience_counter = 0
-                
-                if save_dir is not None:
-                    self.save_checkpoint(
-                        save_dir / f"best_{phase}.pt",
-                        val_metrics
-                    )
-                    print(f"  New best score! Saved checkpoint.")
-            else:
-                patience_counter += 1
-            
-            # Save periodic checkpoint
-            if save_dir is not None and epoch % self.config.training.save_every_n_epochs == 0:
-                self.save_checkpoint(
-                    save_dir / f"epoch_{self.current_epoch}_{phase}.pt",
-                    val_metrics
-                )
             
             # Early stopping
             if patience_counter >= self.config.training.early_stopping_patience:

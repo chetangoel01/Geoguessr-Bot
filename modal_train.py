@@ -525,8 +525,8 @@ def train():
     print(f"  Classification Score: {final_metrics['classification_score']:.4f}")
     print(f"  GPS Score: {final_metrics['gps_score']:.4f}")
     print(f"\nGPS Metrics:")
-    print(f"  Mean Distance: {final_metrics['gps_gps_mean_distance_km']:.1f} km")
-    print(f"  Median Distance: {final_metrics['gps_gps_median_distance_km']:.1f} km")
+    print(f"  Mean Distance: {final_metrics['gps_mean_distance_km']:.1f} km")
+    print(f"  Median Distance: {final_metrics['gps_median_distance_km']:.1f} km")
 
     # Generate predictions on validation set for analysis
     from src.inference.predict import predict_dataset

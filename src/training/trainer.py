@@ -322,7 +322,7 @@ class Trainer:
             print(f"  Val Score: {val_metrics['final_score']:.4f} "
                   f"(cls: {val_metrics['classification_score']:.4f}, "
                   f"gps: {val_metrics['gps_score']:.4f})")
-            print(f"  GPS Mean Distance: {val_metrics['gps_gps_mean_distance_km']:.1f} km")
+            print(f"  GPS Mean Distance: {val_metrics['gps_mean_distance_km']:.1f} km")
             
             # Update history
             self.history['train_loss'].append(train_metrics['train_loss'])

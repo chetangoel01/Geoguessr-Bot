@@ -123,11 +123,28 @@ def train():
     config.paths.logs_dir = Path("outputs/training_logs")
 
     # Ensure output dirs exist
-    for attr in ("logs_dir", "checkpoints_dir", "submissions_dir"):
+    for attr in ("logs_dir", "checkpoints_dir", "submissions_dir", "attention_maps_dir"):
         if hasattr(config.paths, attr):
             d = Path(getattr(config.paths, attr))
             d.mkdir(parents=True, exist_ok=True)
             print(f"{attr} -> {d} (created if missing)")
+
+    # Ensure processed_dir exists (parent for state_centroids and haversine_matrix)
+    if hasattr(config.paths, "processed_dir"):
+        processed_dir = Path(config.paths.processed_dir)
+        processed_dir.mkdir(parents=True, exist_ok=True)
+        print(f"processed_dir -> {processed_dir} (created if missing)")
+
+    # Ensure parent directories exist for file paths
+    file_paths_to_check = [
+        ("state_centroids", config.paths.state_centroids),
+        ("haversine_matrix", config.paths.haversine_matrix),
+    ]
+    for name, file_path in file_paths_to_check:
+        if hasattr(config.paths, name):
+            parent_dir = Path(file_path).parent
+            parent_dir.mkdir(parents=True, exist_ok=True)
+            print(f"{name} parent dir -> {parent_dir} (created if missing)")
 
 
     # Set seed for reproducibility

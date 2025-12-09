@@ -14,25 +14,25 @@ def upload_model(repo_id, model_path, token=None):
 
     api = HfApi(token=token)
     
-    print(f"🚀 Preparing to upload {model_path.name} to {repo_id}...")
+    print(f"Preparing to upload {model_path.name} to {repo_id}...")
     
     try:
         # Create repo if it doesn't exist (private by default for safety)
         api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
-        print(f"✅ Repository {repo_id} ensures (created if missing).")
+        print(f"Repository {repo_id} ready.")
         
         # Upload
-        print(f"📤 Uploading large file (this may take a while)...")
+        print(f"Uploading file...")
         api.upload_file(
             path_or_fileobj=model_path,
             path_in_repo=model_path.name,
             repo_id=repo_id,
             repo_type="model"
         )
-        print(f"✨ Success! Model available at https://huggingface.co/{repo_id}")
+        print(f"Upload complete: https://huggingface.co/{repo_id}")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         print("\nTip: Make sure you are logged in using `huggingface-cli login` or provide a token.")
 
 if __name__ == "__main__":

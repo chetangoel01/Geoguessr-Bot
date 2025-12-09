@@ -9,7 +9,7 @@ def download_weights(repo_id, filename="best_finetune.pt", output_dir="checkpoin
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"⬇️  Downloading {filename} from {repo_id}...")
+    print(f"Downloading {filename} from {repo_id}...")
     
     try:
         local_path = hf_hub_download(
@@ -18,10 +18,10 @@ def download_weights(repo_id, filename="best_finetune.pt", output_dir="checkpoin
             local_dir=output_dir,
             local_dir_use_symlinks=False
         )
-        print(f"✅ Successfully downloaded to: {local_path}")
+        print(f"Downloaded to: {local_path}")
         
     except Exception as e:
-        print(f"❌ Error downloading file: {e}")
+        print(f"Error downloading file: {e}")
         print(f"   Please check if the repository {repo_id} exists and is public (or you have access).")
 
 if __name__ == "__main__":

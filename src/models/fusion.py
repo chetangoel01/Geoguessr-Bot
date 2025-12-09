@@ -127,31 +127,3 @@ class MultiViewFusion(nn.Module):
         attn_logits = self.attention(view_embeddings)
         attn_weights = F.softmax(attn_logits, dim=1).squeeze(-1)
         return attn_weights
-
-
-class DirectionalEmbedding(nn.Module):
-    """
-    Optional: Add learned directional embeddings to each view.
-    
-    This can help the model learn direction-specific patterns
-    (e.g., "north-facing views often show X").
-    """
-    
-    def __init__(self, embedding_dim: int, num_views: int = 4):
-        super().__init__()
-        
-        self.direction_embeddings = nn.Parameter(
-            torch.randn(num_views, embedding_dim) * 0.02
-        )
-    
-    def forward(self, view_embeddings: torch.Tensor) -> torch.Tensor:
-        """
-        Add directional embeddings to view embeddings.
-        
-        Args:
-            view_embeddings: (batch, num_views, embedding_dim)
-        
-        Returns:
-            Embeddings with directional bias: (batch, num_views, embedding_dim)
-        """
-        return view_embeddings + self.direction_embeddings.unsqueeze(0)

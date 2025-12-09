@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
+from ..config import GPS_BOUNDS
 
 
 class ClassificationHead(nn.Module):
@@ -89,10 +90,6 @@ class ClassificationHead(nn.Module):
 class GPSRegressionHead(nn.Module):
     """
     Regression head for predicting GPS coordinates.
-    
-    Two variants:
-    1. Direct: Predict raw latitude/longitude
-    2. Hierarchical: Predict offset from predicted state centroid
     """
     
     def __init__(
@@ -126,8 +123,8 @@ class GPSRegressionHead(nn.Module):
         # US bounding box (approximate)
         # Latitude: 24.5 to 49.5 (continental) or 18 to 71 (including AK, HI)
         # Longitude: -125 to -66
-        self.register_buffer('lat_range', torch.tensor([18.0, 72.0]))
-        self.register_buffer('lon_range', torch.tensor([-180.0, -65.0]))
+        self.register_buffer('lat_range', torch.tensor(GPS_BOUNDS['lat']))
+        self.register_buffer('lon_range', torch.tensor(GPS_BOUNDS['lon']))
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -153,140 +150,3 @@ class GPSRegressionHead(nn.Module):
             output = torch.cat([lat, lon], dim=1)
         
         return output
-
-
-class HierarchicalGPSHead(nn.Module):
-    """
-    Hierarchical GPS prediction: predict offset from state centroid.
-    
-    This constrains predictions to be within a reasonable distance
-    of the predicted state, reducing wild outliers.
-    """
-    
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        hidden_dim: int = 512,
-        dropout: float = 0.1,
-        max_offset_degrees: float = 5.0
-    ):
-        """
-        Args:
-            input_dim: Input embedding dimension
-            num_classes: Number of states (for conditioning)
-            hidden_dim: Hidden layer dimension
-            dropout: Dropout rate
-            max_offset_degrees: Maximum offset from centroid in degrees
-        """
-        super().__init__()
-        
-        self.num_classes = num_classes
-        self.max_offset = max_offset_degrees
-        
-        # Offset predictor
-        self.offset_regressor = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, 2)  # lat_offset, lon_offset
-        )
-        
-        # State centroids will be set during training
-        self.register_buffer(
-            'state_centroids',
-            torch.zeros(num_classes, 2)  # (num_states, 2) for lat, lon
-        )
-    
-    def set_centroids(self, centroids: torch.Tensor):
-        """Set state centroid coordinates."""
-        self.state_centroids.copy_(centroids)
-    
-    def forward(
-        self,
-        x: torch.Tensor,
-        state_indices: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Forward pass.
-        
-        Args:
-            x: Input embeddings of shape (batch, input_dim)
-            state_indices: Predicted state indices of shape (batch,)
-        
-        Returns:
-            GPS coordinates of shape (batch, 2)
-        """
-        # Get centroids for predicted states
-        centroids = self.state_centroids[state_indices]  # (batch, 2)
-        
-        # Predict offset
-        offset = self.offset_regressor(x)
-        offset = torch.tanh(offset) * self.max_offset  # Constrain offset
-        
-        # Add offset to centroid
-        gps = centroids + offset
-        
-        return gps
-
-
-class DualHead(nn.Module):
-    """
-    Combined classification and regression head.
-    
-    Shares some computation for efficiency.
-    """
-    
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        hidden_dim: int = 512,
-        dropout: float = 0.1
-    ):
-        super().__init__()
-        
-        # Shared layers
-        self.shared = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.GELU(),
-            nn.Dropout(dropout)
-        )
-        
-        # Task-specific heads
-        self.classification_head = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim // 2, num_classes)
-        )
-        
-        self.regression_head = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim // 2, 2)
-        )
-        
-        self.num_classes = num_classes
-    
-    def forward(
-        self,
-        x: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Forward pass.
-        
-        Args:
-            x: Input embeddings of shape (batch, input_dim)
-        
-        Returns:
-            class_logits: (batch, num_classes)
-            gps_coords: (batch, 2)
-        """
-        shared = self.shared(x)
-        
-        class_logits = self.classification_head(shared)
-        gps_coords = self.regression_head(shared)
-        
-        return class_logits, gps_coords

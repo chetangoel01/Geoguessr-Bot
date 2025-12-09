@@ -2,11 +2,14 @@
 
 Visual geolocation model for predicting US states and GPS coordinates from 4-directional street view images.
 
-## Competition Overview
+## Project Overview
 
-- **Task**: Predict US state (33 classes) + GPS coordinates from N/E/S/W street view images
-- **Scoring**: 70% weighted top-5 classification + 30% GPS regression
-- **Dataset**: 65,980 training samples, 16,495 test samples
+This repository hosts a state-of-the-art visual geolocation system capable of determining location (US State and GPS coordinates) from a set of four cardinal street view images. Built upon the **StreetCLIP** vision transformer, our pipeline employs a multi-view fusion architecture that integrates visual cues from all directions.
+
+Key features of our approach include:
+- **Dual-Head Prediction**: simultaneously predicts coarse-grained state classification and fine-grained GPS regression.
+- **Geographically Aware Loss**: utilizes a custom Haversine-smoothed loss function that penalizes predictions based on physical distance, teaching the model geographic topology.
+- **Cloud-Native Training**: Fully integrated with **Modal** for seamless serverless training and data management on high-end GPUs.
 
 ## Architecture
 
@@ -154,12 +157,6 @@ Competition rewards calibrated uncertainty:
 3. **Monitor GPS distance** - Median distance more informative than mean
 4. **Ensemble** - 3-5 models with different seeds typically adds 1-3%
 
-## Expected Performance
-
-- Baseline (random): ~0.17 final score
-- Frozen backbone: ~0.50-0.60 final score  
-- Fine-tuned: ~0.70-0.80 final score
-- With ensembling: ~0.75-0.85 final score
 
 ## References
 

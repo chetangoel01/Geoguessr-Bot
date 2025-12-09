@@ -21,15 +21,18 @@ Based on PIGEON (CVPR 2024) findings:
 
 ```
 geoguessr-competition/
-├── notebooks/
-│   └── main.ipynb              # Main training notebook
+├── modal_train.py              # Main training script (Modal)
+├── scripts/
+│   ├── download_model.py       # Download weights from Hugging Face
+│   ├── upload_dataset_to_modal.py # Upload data to Modal volume
+│   └── upload_to_hf.py         # Upload weights to Hugging Face
 ├── src/
 │   ├── config.py               # All hyperparameters
 │   ├── data/
 │   │   ├── dataset.py          # PyTorch Dataset
 │   │   ├── dataloader.py       # DataLoader factory
 │   │   ├── preprocessing.py    # Image transforms
-│   │   └── state_utils.py      # Haversine calculations, soft labels
+│   │   └── state_utils.py      # State mappings and utilities
 │   ├── models/
 │   │   ├── backbone.py         # StreetCLIP/GeoCLIP loading
 │   │   ├── fusion.py           # Multi-view fusion
@@ -44,6 +47,7 @@ geoguessr-competition/
 │   │   ├── ensemble.py         # Model ensembling
 │   │   └── submission.py       # CSV generation
 │   └── utils/
+│       ├── geo.py              # Geographic calculations
 │       ├── seed.py             # Reproducibility
 │       └── visualization.py    # Debugging plots
 ├── data/
@@ -63,12 +67,20 @@ pip install -r requirements.txt
 
 ### 2. Prepare Data
 
+**For Local Training:**
 Place competition data in `data/raw/`:
 - `train_images/`
 - `test_images/`
 - `train_ground_truth.csv`
 - `sample_submission.csv`
 - `state_mapping.csv`
+
+**For Modal Training:**
+Upload the dataset to a Modal volume using the Kaggle API:
+
+```bash
+modal run scripts/upload_dataset_to_modal.py
+```
 
 ### 3. Download Pre-trained Weights (Optional)
 
@@ -83,14 +95,22 @@ Alternatively, download manually from [chetangoel01/GeoguessrModel](https://hugg
 
 ### 4. Training
 
-Open `notebooks/main.ipynb` and run cells sequentially:
+Train on [Modal](https://modal.com) with A100 GPU acceleration:
 
+```bash
+modal run modal_train.py
+```
+
+This pipeline automatically handles:
 1. **Phase 1**: Train heads with frozen backbone (5 epochs)
 2. **Phase 2**: Fine-tune full model (10 epochs)
+3. **Inference**: Generate predictions on test set
 
 ### 5. Inference
 
-Generate submission:
+The training pipeline above automatically generates a submission file.
+
+To run inference manually (locally or on Modal):
 ```python
 from src.inference import predict_dataset, create_submission
 

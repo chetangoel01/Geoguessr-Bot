@@ -190,3 +190,19 @@ TOP_K_WEIGHTS = {
     4: 0.25,
     5: 0.15
 }
+
+# Geographic Constants
+# GPS Bounds (approximate US bounds including AK/HI)
+GPS_BOUNDS = {
+    'lat': (18.0, 72.0),
+    'lon': (-180.0, -65.0)
+}
+
+# Normalization scales for loss (approximate range of US coordinates)
+NORMALIZATION_SCALES = {
+    'lat': 46.0,  # ~71 - ~25
+    'lon': 59.0   # ~-66 - ~-125 (approx)
+}
+
+# Max distance for scoring (5000 km)
+SCORING_MAX_DISTANCE = 5000.0

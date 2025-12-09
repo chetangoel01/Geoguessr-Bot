@@ -70,14 +70,25 @@ Place competition data in `data/raw/`:
 - `sample_submission.csv`
 - `state_mapping.csv`
 
-### 3. Training
+### 3. Download Pre-trained Weights (Optional)
+
+Skip training and download our best fine-tuned model (2.2GB) directly from Hugging Face:
+
+```bash
+python scripts/download_model.py
+```
+*Model will be saved to `checkpoints/best_finetune.pt`*
+
+Alternatively, download manually from [chetangoel01/GeoguessrModel](https://huggingface.co/chetangoel01/GeoguessrModel).
+
+### 4. Training
 
 Open `notebooks/main.ipynb` and run cells sequentially:
 
 1. **Phase 1**: Train heads with frozen backbone (5 epochs)
 2. **Phase 2**: Fine-tune full model (10 epochs)
 
-### 4. Inference
+### 5. Inference
 
 Generate submission:
 ```python

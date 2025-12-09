@@ -11,6 +11,9 @@ import torch.nn.functional as F
 import numpy as np
 from typing import Optional
 
+from ..config import NORMALIZATION_SCALES, SCORING_MAX_DISTANCE
+from ..utils.geo import haversine_distance_torch
+
 
 class HaversineSmoothedCrossEntropy(nn.Module):
     """
@@ -144,11 +147,9 @@ class GPSLoss(nn.Module):
         self.loss_type = loss_type
         self.normalize = normalize
         
-        # Normalization factors (actual US ranges from dataset)
-        # Latitude: ~25° to ~71° = 46° range
-        # Longitude: ~-125° to ~-66° = 59° range
-        self.register_buffer('lat_scale', torch.tensor(46.0))
-        self.register_buffer('lon_scale', torch.tensor(59.0))
+        # Normalization factors
+        self.register_buffer('lat_scale', torch.tensor(NORMALIZATION_SCALES['lat']))
+        self.register_buffer('lon_scale', torch.tensor(NORMALIZATION_SCALES['lon']))
     
     def forward(
         self,
@@ -194,25 +195,10 @@ class GPSLoss(nn.Module):
         target: torch.Tensor
     ) -> torch.Tensor:
         """Compute haversine distance loss in km."""
-        # Convert to radians
-        pred_rad = torch.deg2rad(pred)
-        target_rad = torch.deg2rad(target)
+        distance = haversine_distance_torch(pred, target)
         
-        lat1, lon1 = pred_rad[:, 0], pred_rad[:, 1]
-        lat2, lon2 = target_rad[:, 0], target_rad[:, 1]
-        
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        
-        a = torch.sin(dlat / 2) ** 2 + \
-            torch.cos(lat1) * torch.cos(lat2) * torch.sin(dlon / 2) ** 2
-        c = 2 * torch.asin(torch.sqrt(torch.clamp(a, 0, 1)))
-        
-        # Earth radius in km
-        distance = 6371.0 * c
-        
-        # Normalize by max US distance (~5000 km)
-        return (distance / 5000.0).mean()
+        # Normalize by max US distance
+        return (distance / SCORING_MAX_DISTANCE).mean()
 
 
 class CombinedLoss(nn.Module):

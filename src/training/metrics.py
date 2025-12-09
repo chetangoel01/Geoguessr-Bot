@@ -9,38 +9,8 @@ Implements the official competition scoring:
 import torch
 import numpy as np
 from typing import Dict, Tuple, List, Optional
-from ..config import TOP_K_WEIGHTS
-
-
-def haversine_distance_torch(
-    pred: torch.Tensor,
-    target: torch.Tensor
-) -> torch.Tensor:
-    """
-    Compute haversine distance in kilometers.
-    
-    Args:
-        pred: Predicted GPS (batch, 2) - [lat, lon] in degrees
-        target: Target GPS (batch, 2) - [lat, lon] in degrees
-    
-    Returns:
-        Distances in km (batch,)
-    """
-    # Convert to radians
-    pred_rad = torch.deg2rad(pred)
-    target_rad = torch.deg2rad(target)
-    
-    lat1, lon1 = pred_rad[:, 0], pred_rad[:, 1]
-    lat2, lon2 = target_rad[:, 0], target_rad[:, 1]
-    
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    
-    a = torch.sin(dlat / 2) ** 2 + \
-        torch.cos(lat1) * torch.cos(lat2) * torch.sin(dlon / 2) ** 2
-    c = 2 * torch.asin(torch.sqrt(torch.clamp(a, 0, 1)))
-    
-    return 6371.0 * c  # Earth radius in km
+from ..config import TOP_K_WEIGHTS, SCORING_MAX_DISTANCE
+from ..utils.geo import haversine_distance_torch
 
 
 def compute_weighted_topk_score(
@@ -97,7 +67,7 @@ def compute_weighted_topk_score(
 def compute_gps_score(
     pred: torch.Tensor,
     target: torch.Tensor,
-    max_distance: float = 5000.0
+    max_distance: float = SCORING_MAX_DISTANCE
 ) -> Tuple[float, Dict[str, float]]:
     """
     Compute GPS regression score.
@@ -107,7 +77,7 @@ def compute_gps_score(
     Args:
         pred: Predicted GPS (batch, 2)
         target: Target GPS (batch, 2)
-        max_distance: Maximum distance threshold in km (5000 = US coast-to-coast)
+        max_distance: Maximum distance threshold in km (default from config)
     
     Returns:
         score: GPS score (0 to 1)

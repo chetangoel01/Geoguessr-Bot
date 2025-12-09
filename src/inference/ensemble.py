@@ -3,8 +3,28 @@ Ensemble utilities for combining predictions from multiple models.
 """
 
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 import torch
+
+
+def _average_gps(
+    predictions_list: List[Dict[str, np.ndarray]],
+    weights: Optional[List[float]] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Helper to average GPS coordinates."""
+    n_samples = len(predictions_list[0]['sample_ids'])
+    avg_lat = np.zeros(n_samples)
+    avg_lon = np.zeros(n_samples)
+    
+    if weights is None:
+        n_models = len(predictions_list)
+        weights = [1.0 / n_models] * n_models
+    
+    for i, preds in enumerate(predictions_list):
+        avg_lat += weights[i] * preds['latitudes']
+        avg_lon += weights[i] * preds['longitudes']
+        
+    return avg_lat, avg_lon
 
 
 def ensemble_predictions(
@@ -43,12 +63,7 @@ def ensemble_predictions(
         # This is approximate - ideally we'd have full probability vectors
         
         # For GPS, we can directly average
-        avg_lat = np.zeros(n_samples)
-        avg_lon = np.zeros(n_samples)
-        
-        for i, preds in enumerate(predictions_list):
-            avg_lat += weights[i] * preds['latitudes']
-            avg_lon += weights[i] * preds['longitudes']
+        avg_lat, avg_lon = _average_gps(predictions_list, weights)
         
         # For classification, use voting with probability weighting
         # Collect all predictions and their probabilities
@@ -93,8 +108,7 @@ def ensemble_predictions(
         top_k_probs = top_k_votes / n_models
         
         # Average GPS
-        avg_lat = np.mean([p['latitudes'] for p in predictions_list], axis=0)
-        avg_lon = np.mean([p['longitudes'] for p in predictions_list], axis=0)
+        avg_lat, avg_lon = _average_gps(predictions_list)
         
         return {
             'sample_ids': sample_ids,
@@ -169,8 +183,7 @@ def rank_fusion(
     top_k_probs = top_k_scores / (top_k_scores.sum(axis=1, keepdims=True) + 1e-10)
     
     # Average GPS
-    avg_lat = np.mean([p['latitudes'] for p in predictions_list], axis=0)
-    avg_lon = np.mean([p['longitudes'] for p in predictions_list], axis=0)
+    avg_lat, avg_lon = _average_gps(predictions_list)
     
     return {
         'sample_ids': predictions_list[0]['sample_ids'],

@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional
+from ..config import GPS_BOUNDS
 
 
 def create_submission(
@@ -145,7 +146,10 @@ def validate_submission(
     # Check for reasonable US coordinates
     # Continental US: lat 24-50, lon -125 to -66
     # With Alaska and Hawaii: lat 18-72, lon -180 to -65
-    outside_us = ((lats < 18) | (lats > 72) | (lons > -65) | (lons < -180))
+    min_lat, max_lat = GPS_BOUNDS['lat']
+    min_lon, max_lon = GPS_BOUNDS['lon']
+    
+    outside_us = ((lats < min_lat) | (lats > max_lat) | (lons > max_lon) | (lons < min_lon))
     if outside_us.any():
         n_outside = outside_us.sum()
         if n_outside > 0:
